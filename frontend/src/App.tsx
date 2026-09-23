@@ -48,7 +48,7 @@ import TiltedCard from "./components/TiltedCard";
 import GooeyNav from "./components/GooeyNav";
 import AnimatedList from "./components/AnimatedList";
 
-const API_BASE = import.meta.env.VITE_API_URL || (typeof window !== "undefined" && (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1") ? "http://127.0.0.1:8000" : "https://recruitshield-backend.onrender.com");
+const API_BASE = import.meta.env.VITE_API_URL || (typeof window !== "undefined" && (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1") ? "http://127.0.0.1:8000" : "");
 
 type Candidate = {
   id: number;
