@@ -6,6 +6,14 @@ RecruitShield AI is an intelligent candidate discovery and integrity auditing pl
 
 ---
 
+## 🌐 Live Production Deployments
+* **🚀 Live Recruiter Dashboard (Vercel)**: [`https://beginner-s-paradise-recruitshield.vercel.app`](https://beginner-s-paradise-recruitshield.vercel.app)
+* **⚙️ Live Backend API (Render)**: [`https://beginner-s-paradise-recruitshield.onrender.com`](https://beginner-s-paradise-recruitshield.onrender.com)
+* **📖 Interactive API Docs (Swagger)**: [`https://beginner-s-paradise-recruitshield.onrender.com/docs`](https://beginner-s-paradise-recruitshield.onrender.com/docs)
+* **🟢 API Health Check**: [`https://beginner-s-paradise-recruitshield.onrender.com/health`](https://beginner-s-paradise-recruitshield.onrender.com/health)
+
+---
+
 ## 🤖 AI & Tooling Disclosure
 
 In compliance with the **First Commit Hackathon** rules on transparency:
