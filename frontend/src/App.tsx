@@ -745,7 +745,7 @@ function DropZone({
           </div>
         </div>
       </div>
-      <label className="drop-zone">
+      <label className="drop-zone" style={{ position: 'relative', overflow: 'hidden' }}>
         <input
           type="file"
           multiple
@@ -763,37 +763,58 @@ function DropZone({
         </small>
       </label>
       {files.length > 0 && (
-        <div className="file-list">
+        <div className="file-list" style={{ position: 'relative', zIndex: 10, marginTop: '12px' }}>
           {files.slice(-3).map((f) => (
-            <div key={f} style={{ display: 'flex', alignItems: 'center', gap: '6px', justifyContent: 'space-between' }}>
+            <div key={f} style={{ display: 'flex', alignItems: 'center', gap: '6px', justifyContent: 'space-between', position: 'relative', zIndex: 15 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px', minWidth: 0, flex: 1 }}>
                 <Check size={13} style={{ flexShrink: 0 }} />
                 <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{f}</span>
               </div>
-              <button
-                type="button"
+              <div
+                role="button"
+                tabIndex={0}
                 onClick={(e) => {
+                  e.preventDefault();
                   e.stopPropagation();
                   if (onRemoveFile) onRemoveFile(f);
                 }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (onRemoveFile) onRemoveFile(f);
+                  }
+                }}
                 style={{
-                  background: 'none',
-                  border: 'none',
-                  color: '#6e8c91',
+                  background: 'rgba(255, 255, 255, 0.08)',
+                  border: '1px solid rgba(255, 255, 255, 0.15)',
+                  color: '#94a3b8',
                   cursor: 'pointer',
-                  padding: '2px',
+                  width: '24px',
+                  height: '24px',
                   display: 'grid',
                   placeItems: 'center',
-                  borderRadius: '4px',
-                  transition: 'color 0.2s',
+                  borderRadius: '6px',
+                  transition: 'all 0.2s ease',
                   flexShrink: 0,
+                  position: 'relative',
+                  zIndex: 25,
+                  pointerEvents: 'auto',
                 }}
                 title="Remove file"
-                onMouseEnter={(e) => (e.currentTarget.style.color = '#ef4444')}
-                onMouseLeave={(e) => (e.currentTarget.style.color = '#6e8c91')}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.color = '#ef4444';
+                  e.currentTarget.style.background = 'rgba(239, 68, 68, 0.2)';
+                  e.currentTarget.style.borderColor = 'rgba(239, 68, 68, 0.4)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.color = '#94a3b8';
+                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.08)';
+                  e.currentTarget.style.borderColor = 'rgba(239, 68, 68, 0.15)';
+                }}
               >
-                <X size={13} />
-              </button>
+                <X size={14} style={{ pointerEvents: 'none' }} />
+              </div>
             </div>
           ))}
         </div>
