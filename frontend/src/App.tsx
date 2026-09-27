@@ -323,6 +323,355 @@ function BedrockConfigModal({ isOpen, onClose }: { isOpen: boolean; onClose: () 
   );
 }
 
+interface DemoLoadingModalProps {
+  isOpen: boolean;
+  progress: number;
+  stepIndex: number;
+  logs: string[];
+  isComplete: boolean;
+  error: string | null;
+  onClose: () => void;
+}
+
+const DEMO_STEPS = [
+  {
+    name: "Dataset Ingestion & Validation",
+    desc: "Loading 14 sample candidate profiles from sample_candidates.jsonl bundle",
+    icon: Database,
+  },
+  {
+    name: "5-Point Anomaly Firewall Scan",
+    desc: "Auditing experience gaps, synthetic trap profiles, & honeypot flags",
+    icon: ShieldCheck,
+  },
+  {
+    name: "Bias-Mitigated Normalization",
+    desc: "Scrubbing prestige bias & normalizing experience metrics",
+    icon: Cpu,
+  },
+  {
+    name: "BGE Neural Vector Embeddings",
+    desc: "Computing 1024-dimensional dense skill vector embeddings",
+    icon: Sparkles,
+  },
+  {
+    name: "Autonomous Shortlist & Match Matrix",
+    desc: "Assembling recruiter co-pilot candidate scores & radar metrics",
+    icon: Zap,
+  },
+];
+
+function DemoLoadingModal({
+  isOpen,
+  progress,
+  stepIndex,
+  logs,
+  isComplete,
+  error,
+  onClose,
+}: DemoLoadingModalProps) {
+  if (!isOpen) return null;
+
+  return (
+    <div
+      style={{
+        position: "fixed",
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        background: "rgba(5, 9, 15, 0.88)",
+        backdropFilter: "blur(14px)",
+        zIndex: 9999,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: "20px",
+      }}
+    >
+      <div
+        style={{
+          width: "100%",
+          maxWidth: "580px",
+          background: "linear-gradient(180deg, #0f172a 0%, #0b1120 100%)",
+          border: isComplete
+            ? "1px solid rgba(52, 211, 153, 0.4)"
+            : error
+            ? "1px solid rgba(239, 68, 68, 0.4)"
+            : "1px solid rgba(56, 189, 248, 0.35)",
+          borderRadius: "20px",
+          padding: "32px",
+          boxShadow: isComplete
+            ? "0 25px 60px rgba(0, 0, 0, 0.7), 0 0 50px rgba(52, 211, 153, 0.2)"
+            : "0 25px 60px rgba(0, 0, 0, 0.7), 0 0 50px rgba(56, 189, 248, 0.2)",
+          fontFamily: "Inter, system-ui, sans-serif",
+          color: "#f8fafc",
+          position: "relative",
+        }}
+      >
+        {/* Header */}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "20px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+            <div
+              style={{
+                width: "38px",
+                height: "38px",
+                borderRadius: "10px",
+                background: isComplete ? "rgba(52, 211, 153, 0.15)" : "rgba(56, 189, 248, 0.15)",
+                border: isComplete ? "1px solid rgba(52, 211, 153, 0.3)" : "1px solid rgba(56, 189, 248, 0.3)",
+                display: "grid",
+                placeItems: "center",
+                color: isComplete ? "#34d399" : "#38bdf8",
+              }}
+            >
+              {isComplete ? <Check size={20} /> : <Zap size={20} />}
+            </div>
+            <div>
+              <div style={{ fontSize: "11px", fontWeight: 800, color: isComplete ? "#34d399" : "#38bdf8", letterSpacing: "0.1em", textTransform: "uppercase" }}>
+                Autonomous AI Pipeline
+              </div>
+              <h3 style={{ margin: 0, fontSize: "18px", fontWeight: 700, color: "#f8fafc" }}>
+                {isComplete ? "Demo Dataset Loaded Successfully!" : error ? "Dataset Loading Error" : "Loading Demo Dataset..."}
+              </h3>
+            </div>
+          </div>
+          {(isComplete || error) && (
+            <button
+              onClick={onClose}
+              style={{
+                width: "32px",
+                height: "32px",
+                borderRadius: "8px",
+                background: "rgba(255, 255, 255, 0.06)",
+                border: "1px solid rgba(255, 255, 255, 0.12)",
+                color: "#94a3b8",
+                cursor: "pointer",
+                display: "grid",
+                placeItems: "center",
+              }}
+            >
+              <X size={16} />
+            </button>
+          )}
+        </div>
+
+        {/* Progress Display */}
+        <div style={{ marginBottom: "24px" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: "8px" }}>
+            <span style={{ fontSize: "13px", color: "#94a3b8", fontWeight: 500 }}>
+              {isComplete
+                ? "14 Candidate Profiles Active"
+                : error
+                ? "Operation Halted"
+                : `Step ${Math.min(stepIndex + 1, 5)} of 5 — ${DEMO_STEPS[Math.min(stepIndex, 4)].name}`}
+            </span>
+            <span
+              style={{
+                fontFamily: "SFMono-Regular, Consolas, monospace",
+                fontSize: "28px",
+                fontWeight: 800,
+                color: isComplete ? "#34d399" : error ? "#ef4444" : "#38bdf8",
+                textShadow: isComplete ? "0 0 15px rgba(52, 211, 153, 0.4)" : "0 0 15px rgba(56, 189, 248, 0.4)",
+              }}
+            >
+              {progress}%
+            </span>
+          </div>
+
+          {/* Bar */}
+          <div
+            style={{
+              width: "100%",
+              height: "10px",
+              background: "rgba(15, 23, 42, 0.8)",
+              borderRadius: "999px",
+              padding: "2px",
+              border: "1px solid rgba(255, 255, 255, 0.08)",
+              overflow: "hidden",
+            }}
+          >
+            <div
+              style={{
+                width: `${progress}%`,
+                height: "100%",
+                background: isComplete
+                  ? "linear-gradient(90deg, #059669, #34d399)"
+                  : error
+                  ? "#ef4444"
+                  : "linear-gradient(90deg, #0284c7, #38bdf8, #818cf8)",
+                borderRadius: "999px",
+                transition: "width 0.2s ease-out",
+                boxShadow: isComplete
+                  ? "0 0 15px rgba(52, 211, 153, 0.6)"
+                  : "0 0 15px rgba(56, 189, 248, 0.6)",
+              }}
+            />
+          </div>
+        </div>
+
+        {/* Steps List */}
+        <div style={{ display: "flex", flexDirection: "column", gap: "10px", marginBottom: "20px" }}>
+          {DEMO_STEPS.map((step, idx) => {
+            const Icon = step.icon;
+            const isDone = isComplete || idx < stepIndex;
+            const isActive = !isComplete && !error && idx === stepIndex;
+
+            return (
+              <div
+                key={idx}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "12px",
+                  padding: "10px 14px",
+                  borderRadius: "10px",
+                  background: isActive
+                    ? "rgba(56, 189, 248, 0.08)"
+                    : isDone
+                    ? "rgba(52, 211, 153, 0.04)"
+                    : "rgba(255, 255, 255, 0.02)",
+                  border: isActive
+                    ? "1px solid rgba(56, 189, 248, 0.25)"
+                    : isDone
+                    ? "1px solid rgba(52, 211, 153, 0.15)"
+                    : "1px solid rgba(255, 255, 255, 0.04)",
+                  transition: "all 0.2s ease",
+                }}
+              >
+                <div
+                  style={{
+                    width: "26px",
+                    height: "26px",
+                    borderRadius: "50%",
+                    background: isDone
+                      ? "rgba(52, 211, 153, 0.2)"
+                      : isActive
+                      ? "rgba(56, 189, 248, 0.2)"
+                      : "rgba(255, 255, 255, 0.05)",
+                    border: isDone
+                      ? "1px solid #34d399"
+                      : isActive
+                      ? "1px solid #38bdf8"
+                      : "1px solid rgba(255, 255, 255, 0.1)",
+                    display: "grid",
+                    placeItems: "center",
+                    color: isDone ? "#34d399" : isActive ? "#38bdf8" : "#475569",
+                    flexShrink: 0,
+                  }}
+                >
+                  {isDone ? (
+                    <Check size={14} />
+                  ) : isActive ? (
+                    <span
+                      className="spinner"
+                      style={{
+                        width: "12px",
+                        height: "12px",
+                        borderColor: "rgba(56, 189, 248, 0.3)",
+                        borderTopColor: "#38bdf8",
+                      }}
+                    />
+                  ) : (
+                    <Icon size={13} />
+                  )}
+                </div>
+
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div
+                    style={{
+                      fontSize: "13px",
+                      fontWeight: isActive ? 700 : isDone ? 600 : 500,
+                      color: isActive ? "#38bdf8" : isDone ? "#e2e8f0" : "#64748b",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "6px",
+                    }}
+                  >
+                    {step.name}
+                  </div>
+                  <div
+                    style={{
+                      fontSize: "11px",
+                      color: isActive ? "#94a3b8" : isDone ? "#64748b" : "#475569",
+                      marginTop: "1px",
+                      whiteSpace: "nowrap",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                    }}
+                  >
+                    {step.desc}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Console / Log Terminal */}
+        <div
+          style={{
+            background: "#060a12",
+            border: "1px solid rgba(255, 255, 255, 0.08)",
+            borderRadius: "10px",
+            padding: "10px 14px",
+            maxHeight: "95px",
+            overflowY: "auto",
+            fontFamily: "SFMono-Regular, Consolas, monospace",
+            fontSize: "11px",
+            color: "#94a3b8",
+            display: "flex",
+            flexDirection: "column",
+            gap: "4px",
+          }}
+        >
+          {logs.map((log, i) => (
+            <div
+              key={i}
+              style={{
+                color: log.includes("[SUCCESS]")
+                  ? "#34d399"
+                  : log.includes("[ERROR]")
+                  ? "#ef4444"
+                  : log.includes("[FIREWALL]")
+                  ? "#f59e0b"
+                  : log.includes("[EMBEDDINGS]")
+                  ? "#a855f7"
+                  : "#38bdf8",
+              }}
+            >
+              {log}
+            </div>
+          ))}
+        </div>
+
+        {/* Actions if completed or error */}
+        {(isComplete || error) && (
+          <div style={{ marginTop: "18px", display: "flex", justifyContent: "flex-end" }}>
+            <button
+              onClick={onClose}
+              style={{
+                padding: "10px 24px",
+                borderRadius: "10px",
+                background: isComplete
+                  ? "linear-gradient(135deg, #10b981, #059669)"
+                  : "rgba(255, 255, 255, 0.1)",
+                border: "none",
+                color: "#ffffff",
+                fontWeight: 700,
+                fontSize: "13px",
+                cursor: "pointer",
+                boxShadow: isComplete ? "0 0 20px rgba(52, 211, 153, 0.3)" : "none",
+              }}
+            >
+              {isComplete ? "View Candidate Pipeline →" : "Close"}
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function Logo({ compact = false }: { compact?: boolean }) {
   return (
     <div className="flex items-center gap-3">
@@ -523,6 +872,12 @@ export default function RecruitShieldApp() {
   const [activeTab, setActiveTab] = useState<'eligible' | 'unaligned' | 'all' | 'shortlisted'>('eligible');
   const [isHowItWorksOpen, setIsHowItWorksOpen] = useState(false);
   const [isBedrockConfigOpen, setIsBedrockConfigOpen] = useState(false);
+  const [isDemoLoading, setIsDemoLoading] = useState(false);
+  const [demoProgress, setDemoProgress] = useState(0);
+  const [demoStep, setDemoStep] = useState(0);
+  const [demoLogs, setDemoLogs] = useState<string[]>([]);
+  const [demoComplete, setDemoComplete] = useState(false);
+  const [demoError, setDemoError] = useState<string | null>(null);
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" | "info" } | null>(null);
 
   const showToast = (message: string, type: "success" | "error" | "info" = "info") => {
@@ -1034,24 +1389,71 @@ export default function RecruitShieldApp() {
   };
 
   const handleLoadDemoDataset = async () => {
+    setIsDemoLoading(true);
+    setDemoProgress(5);
+    setDemoStep(0);
+    setDemoLogs([
+      "[SYS] Connecting to RecruitShieldAI backend engine...",
+      "[INGEST] Parsing sample_candidates.jsonl bundle (14 candidate profiles)...",
+    ]);
+    setDemoComplete(false);
+    setDemoError(null);
+
+    let currentProg = 5;
+    let currentStepIndex = 0;
+    const stepTargetProgress = [20, 45, 68, 88, 96];
+    const stepLogs = [
+      "[FIREWALL] Running 5-Point Anomaly Firewall on candidate profiles...",
+      "[BIAS-MITIGATION] Scrubbing prestige bias & normalizing experience metrics...",
+      "[EMBEDDINGS] Computing 1024-dim dense vector embeddings via BGE model...",
+      "[CO-PILOT] Assembling candidate shortlist & recruiter radar matrix...",
+    ];
+
+    const interval = setInterval(() => {
+      currentProg += Math.floor(Math.random() * 3) + 2;
+      if (currentStepIndex < 4 && currentProg >= stepTargetProgress[currentStepIndex]) {
+        currentStepIndex++;
+        setDemoStep(currentStepIndex);
+        if (stepLogs[currentStepIndex - 1]) {
+          setDemoLogs((prev) => [...prev, stepLogs[currentStepIndex - 1]]);
+        }
+      }
+      if (currentProg > 92) {
+        currentProg = 92;
+      }
+      setDemoProgress(currentProg);
+    }, 120);
+
     try {
-      showToast("Loading bundled demo dataset...", "info");
       let res = await fetch(`${API_BASE}/load_demo`, { method: "POST" });
       if (res.status === 404) {
         res = await fetch(`${API_BASE}/load`, { method: "POST" });
       }
       const data = await res.json();
+      clearInterval(interval);
+
       if (res.ok && (data.status === "success" || data.count > 0)) {
-        setFiles(["sample_candidates.jsonl (Demo Dataset)"]);
+        setDemoStep(4);
+        setDemoProgress(100);
+        setDemoComplete(true);
         const count = data.total_candidates || data.count || 14;
+        setDemoLogs((prev) => [
+          ...prev,
+          `[SUCCESS] Loaded ${count} candidates into active candidate pool!`,
+          "[PIPELINE] RecruitShieldAI matches ready to explore.",
+        ]);
+        setFiles(["sample_candidates.jsonl (Demo Dataset)"]);
         fetchShortlist(1);
         showToast(`Demo dataset loaded successfully (${count} candidates)`, "success");
       } else {
-        showToast(`Failed to load demo dataset: ${data.detail || 'Error'}`, "error");
+        setDemoError(data.detail || "Failed to load demo dataset.");
+        setDemoLogs((prev) => [...prev, `[ERROR] ${data.detail || "Error loading dataset"}`]);
       }
-    } catch (err) {
+    } catch (err: any) {
+      clearInterval(interval);
       console.error(err);
-      showToast("Error connecting to backend server.", "error");
+      setDemoError("Error connecting to backend server.");
+      setDemoLogs((prev) => [...prev, "[ERROR] Connection failed. Please check backend server status."]);
     }
   };
 
@@ -1063,6 +1465,15 @@ export default function RecruitShieldApp() {
           isOpen={isHowItWorksOpen}
           onClose={() => setIsHowItWorksOpen(false)}
           onLaunchWorkspace={() => setScreen("ingest")}
+        />
+        <DemoLoadingModal
+          isOpen={isDemoLoading}
+          progress={demoProgress}
+          stepIndex={demoStep}
+          logs={demoLogs}
+          isComplete={demoComplete}
+          error={demoError}
+          onClose={() => setIsDemoLoading(false)}
         />
         <Toast toast={toast} onDismiss={() => setToast(null)} />
       </>
@@ -1103,6 +1514,15 @@ export default function RecruitShieldApp() {
           isOpen={isBedrockConfigOpen}
           onClose={() => setIsBedrockConfigOpen(false)}
         />
+        <DemoLoadingModal
+          isOpen={isDemoLoading}
+          progress={demoProgress}
+          stepIndex={demoStep}
+          logs={demoLogs}
+          isComplete={demoComplete}
+          error={demoError}
+          onClose={() => setIsDemoLoading(false)}
+        />
         <Toast toast={toast} onDismiss={() => setToast(null)} />
       </>
     );
@@ -1114,6 +1534,15 @@ export default function RecruitShieldApp() {
           isOpen={isHowItWorksOpen}
           onClose={() => setIsHowItWorksOpen(false)}
           onLaunchWorkspace={() => setScreen("pipeline")}
+        />
+        <DemoLoadingModal
+          isOpen={isDemoLoading}
+          progress={demoProgress}
+          stepIndex={demoStep}
+          logs={demoLogs}
+          isComplete={demoComplete}
+          error={demoError}
+          onClose={() => setIsDemoLoading(false)}
         />
         <Toast toast={toast} onDismiss={() => setToast(null)} />
       </>
@@ -1196,6 +1625,15 @@ export default function RecruitShieldApp() {
       <BedrockConfigModal
         isOpen={isBedrockConfigOpen}
         onClose={() => setIsBedrockConfigOpen(false)}
+      />
+      <DemoLoadingModal
+        isOpen={isDemoLoading}
+        progress={demoProgress}
+        stepIndex={demoStep}
+        logs={demoLogs}
+        isComplete={demoComplete}
+        error={demoError}
+        onClose={() => setIsDemoLoading(false)}
       />
       <Toast toast={toast} onDismiss={() => setToast(null)} />
       <AIChatbotWidget jd={jd} />
