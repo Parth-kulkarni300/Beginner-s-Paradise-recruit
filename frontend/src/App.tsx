@@ -692,7 +692,7 @@ function Logo({ compact = false }: { compact?: boolean }) {
             RecruitShield AI
           </GlitchText>
           <div className="micro-label text-muted-foreground">
-            AGENTIC RECRUITMENT INTELLIGENCE
+            AGENTIC RECRUITMENT INTELLIGENCE · v1.1
           </div>
         </div>
       )}
