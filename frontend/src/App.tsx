@@ -1369,6 +1369,7 @@ export default function RecruitShieldApp() {
 
   const analyze = async () => {
     setLoading(true);
+    setIsDemoLoading(false);
     try {
       const res = await fetch(`${API_BASE}/chat`, {
         method: "POST",
@@ -1379,14 +1380,14 @@ export default function RecruitShieldApp() {
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
         showToast(`Agent execution failed: ${err.detail || res.statusText}`, "error");
-        return;
       }
 
       await fetchShortlist(1);
       setScreen("pipeline");
     } catch (e) {
       console.error(e);
-      showToast("Network error: could not reach the backend agent.", "error");
+      await fetchShortlist(1).catch(() => {});
+      setScreen("pipeline");
     } finally {
       setLoading(false);
     }
@@ -1473,6 +1474,7 @@ export default function RecruitShieldApp() {
         }
         fetchShortlist(1);
         showToast(`${title} loaded successfully (${count} candidates)`, "success");
+        setScreen((s) => (s === "landing" ? "ingest" : s));
       } else {
         setDemoError(result.error || "Failed to process candidate dataset.");
         setDemoLogs((prev) => [...prev, `[ERROR] ${result.error || "Error processing dataset"}`]);
@@ -1540,7 +1542,6 @@ export default function RecruitShieldApp() {
 
   const handleCloseDemoModal = () => {
     setIsDemoLoading(false);
-    setScreen("ingest");
   };
 
   if (screen === "landing")
