@@ -725,12 +725,14 @@ function DropZone({
   icon,
   files,
   onFiles,
+  onRemoveFile,
 }: {
   title: string;
   description: string;
   icon: React.ReactNode;
   files: string[];
   onFiles: (x: FileList | null) => void;
+  onRemoveFile?: (fileName: string) => void;
 }) {
   return (
     <div className="ingest-card">
@@ -763,10 +765,35 @@ function DropZone({
       {files.length > 0 && (
         <div className="file-list">
           {files.slice(-3).map((f) => (
-            <div key={f}>
-              <Check size={13} />
-              {f}
-              <X size={13} />
+            <div key={f} style={{ display: 'flex', alignItems: 'center', gap: '6px', justifyContent: 'space-between' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', minWidth: 0, flex: 1 }}>
+                <Check size={13} style={{ flexShrink: 0 }} />
+                <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{f}</span>
+              </div>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (onRemoveFile) onRemoveFile(f);
+                }}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: '#6e8c91',
+                  cursor: 'pointer',
+                  padding: '2px',
+                  display: 'grid',
+                  placeItems: 'center',
+                  borderRadius: '4px',
+                  transition: 'color 0.2s',
+                  flexShrink: 0,
+                }}
+                title="Remove file"
+                onMouseEnter={(e) => (e.currentTarget.style.color = '#ef4444')}
+                onMouseLeave={(e) => (e.currentTarget.style.color = '#6e8c91')}
+              >
+                <X size={13} />
+              </button>
             </div>
           ))}
         </div>
@@ -2121,6 +2148,10 @@ function Ingest({
             icon={<Users size={22} />}
             files={files}
             onFiles={(list: any) => addFiles(list, 'candidates')}
+            onRemoveFile={(fileName: string) => {
+              setFiles(files.filter((f) => f !== fileName));
+              showToast(`Removed ${fileName} from candidate pool`, "info");
+            }}
           />
           <div className="ingest-card">
             <div className="card-heading">
