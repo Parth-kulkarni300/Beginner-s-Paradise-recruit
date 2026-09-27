@@ -330,13 +330,14 @@ interface DemoLoadingModalProps {
   logs: string[];
   isComplete: boolean;
   error: string | null;
+  title?: string;
   onClose: () => void;
 }
 
 const DEMO_STEPS = [
   {
     name: "Dataset Ingestion & Validation",
-    desc: "Loading 14 sample candidate profiles from sample_candidates.jsonl bundle",
+    desc: "Parsing & validating candidate dataset bundle",
     icon: Database,
   },
   {
@@ -368,8 +369,18 @@ function DemoLoadingModal({
   logs,
   isComplete,
   error,
+  title,
   onClose,
 }: DemoLoadingModalProps) {
+  useEffect(() => {
+    if (isComplete && !error) {
+      const timer = setTimeout(() => {
+        onClose();
+      }, 700);
+      return () => clearTimeout(timer);
+    }
+  }, [isComplete, error, onClose]);
+
   if (!isOpen) return null;
 
   return (
@@ -431,7 +442,7 @@ function DemoLoadingModal({
                 Autonomous AI Pipeline
               </div>
               <h3 style={{ margin: 0, fontSize: "18px", fontWeight: 700, color: "#f8fafc" }}>
-                {isComplete ? "Demo Dataset Loaded Successfully!" : error ? "Dataset Loading Error" : "Loading Demo Dataset..."}
+                {isComplete ? `${title || "Dataset"} Loaded Successfully!` : error ? "Dataset Loading Error" : `Loading ${title || "Dataset"}...`}
               </h3>
             </div>
           </div>
@@ -460,7 +471,7 @@ function DemoLoadingModal({
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: "8px" }}>
             <span style={{ fontSize: "13px", color: "#94a3b8", fontWeight: 500 }}>
               {isComplete
-                ? "14 Candidate Profiles Active"
+                ? "Dataset Processed & Active"
                 : error
                 ? "Operation Halted"
                 : `Step ${Math.min(stepIndex + 1, 5)} of 5 — ${DEMO_STEPS[Math.min(stepIndex, 4)].name}`}
@@ -644,26 +655,23 @@ function DemoLoadingModal({
           ))}
         </div>
 
-        {/* Actions if completed or error */}
-        {(isComplete || error) && (
+        {/* Actions if error */}
+        {error && (
           <div style={{ marginTop: "18px", display: "flex", justifyContent: "flex-end" }}>
             <button
               onClick={onClose}
               style={{
                 padding: "10px 24px",
                 borderRadius: "10px",
-                background: isComplete
-                  ? "linear-gradient(135deg, #10b981, #059669)"
-                  : "rgba(255, 255, 255, 0.1)",
+                background: "rgba(255, 255, 255, 0.1)",
                 border: "none",
                 color: "#ffffff",
                 fontWeight: 700,
                 fontSize: "13px",
                 cursor: "pointer",
-                boxShadow: isComplete ? "0 0 20px rgba(52, 211, 153, 0.3)" : "none",
               }}
             >
-              {isComplete ? "View Candidate Pipeline →" : "Close"}
+              Close
             </button>
           </div>
         )}
@@ -894,6 +902,7 @@ export default function RecruitShieldApp() {
   const [demoLogs, setDemoLogs] = useState<string[]>([]);
   const [demoComplete, setDemoComplete] = useState(false);
   const [demoError, setDemoError] = useState<string | null>(null);
+  const [demoTitle, setDemoTitle] = useState<string>("Demo Dataset");
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" | "info" } | null>(null);
 
   const showToast = (message: string, type: "success" | "error" | "info" = "info") => {
@@ -1404,13 +1413,18 @@ export default function RecruitShieldApp() {
     }
   };
 
-  const handleLoadDemoDataset = async () => {
+  const startIngestionPipeline = async (
+    title: string,
+    initialLog: string,
+    processTask: () => Promise<{ success: boolean; count?: number; error?: string; filesAdded?: string[] }>
+  ) => {
+    setDemoTitle(title);
     setIsDemoLoading(true);
     setDemoProgress(5);
     setDemoStep(0);
     setDemoLogs([
       "[SYS] Connecting to RecruitShieldAI backend engine...",
-      "[INGEST] Parsing sample_candidates.jsonl bundle (14 candidate profiles)...",
+      initialLog,
     ]);
     setDemoComplete(false);
     setDemoError(null);
@@ -1441,29 +1455,27 @@ export default function RecruitShieldApp() {
     }, 120);
 
     try {
-      let res = await fetch(`${API_BASE}/load_demo`, { method: "POST" });
-      if (res.status === 404) {
-        res = await fetch(`${API_BASE}/load`, { method: "POST" });
-      }
-      const data = await res.json();
+      const result = await processTask();
       clearInterval(interval);
 
-      if (res.ok && (data.status === "success" || data.count > 0)) {
+      if (result.success) {
         setDemoStep(4);
         setDemoProgress(100);
         setDemoComplete(true);
-        const count = data.total_candidates || data.count || 14;
+        const count = result.count || 14;
         setDemoLogs((prev) => [
           ...prev,
-          `[SUCCESS] Loaded ${count} candidates into active candidate pool!`,
+          `[SUCCESS] Loaded ${count} candidate profiles into active pool!`,
           "[PIPELINE] RecruitShieldAI matches ready to explore.",
         ]);
-        setFiles(["sample_candidates.jsonl (Demo Dataset)"]);
+        if (result.filesAdded && result.filesAdded.length > 0) {
+          setFiles((prev) => [...prev, ...result.filesAdded!]);
+        }
         fetchShortlist(1);
-        showToast(`Demo dataset loaded successfully (${count} candidates)`, "success");
+        showToast(`${title} loaded successfully (${count} candidates)`, "success");
       } else {
-        setDemoError(data.detail || "Failed to load demo dataset.");
-        setDemoLogs((prev) => [...prev, `[ERROR] ${data.detail || "Error loading dataset"}`]);
+        setDemoError(result.error || "Failed to process candidate dataset.");
+        setDemoLogs((prev) => [...prev, `[ERROR] ${result.error || "Error processing dataset"}`]);
       }
     } catch (err: any) {
       clearInterval(interval);
@@ -1471,6 +1483,64 @@ export default function RecruitShieldApp() {
       setDemoError("Error connecting to backend server.");
       setDemoLogs((prev) => [...prev, "[ERROR] Connection failed. Please check backend server status."]);
     }
+  };
+
+  const handleLoadDemoDataset = async () => {
+    await startIngestionPipeline(
+      "Demo Dataset",
+      "[INGEST] Parsing sample_candidates.jsonl bundle (14 candidate profiles)...",
+      async () => {
+        let res = await fetch(`${API_BASE}/load_demo`, { method: "POST" });
+        if (res.status === 404) {
+          res = await fetch(`${API_BASE}/load`, { method: "POST" });
+        }
+        const data = await res.json();
+        if (res.ok && (data.status === "success" || data.count > 0)) {
+          return {
+            success: true,
+            count: data.total_candidates || data.count || 14,
+            filesAdded: ["sample_candidates.jsonl (Demo Dataset)"],
+          };
+        }
+        return { success: false, error: data.detail || "Failed to load demo dataset." };
+      }
+    );
+  };
+
+  const handleUploadCandidateFiles = async (list: FileList) => {
+    const fileArray = Array.from(list);
+    const fileNames = fileArray.map((f) => f.name);
+    const title = fileNames.length === 1 ? fileNames[0] : `${fileNames.length} Candidate Files`;
+
+    await startIngestionPipeline(
+      title,
+      `[INGEST] Uploading & parsing ${fileNames.join(", ")} (${fileArray.length} file${fileArray.length > 1 ? "s" : ""})...`,
+      async () => {
+        const formData = new FormData();
+        for (let i = 0; i < list.length; i++) {
+          formData.append("files", list[i]);
+        }
+        const res = await fetch(`${API_BASE}/upload_candidates`, {
+          method: "POST",
+          body: formData,
+        });
+        const data = await res.json();
+        if (res.ok && (data.status === "success" || data.total_candidates || data.count)) {
+          const count = data.total_candidates || data.count || fileArray.length;
+          return {
+            success: true,
+            count: count,
+            filesAdded: fileNames,
+          };
+        }
+        return { success: false, error: data.detail || "Failed to process candidate files." };
+      }
+    );
+  };
+
+  const handleCloseDemoModal = () => {
+    setIsDemoLoading(false);
+    setScreen("ingest");
   };
 
   if (screen === "landing")
@@ -1489,7 +1559,8 @@ export default function RecruitShieldApp() {
           logs={demoLogs}
           isComplete={demoComplete}
           error={demoError}
-          onClose={() => setIsDemoLoading(false)}
+          title={demoTitle}
+          onClose={handleCloseDemoModal}
         />
         <Toast toast={toast} onDismiss={() => setToast(null)} />
       </>
@@ -1508,10 +1579,7 @@ export default function RecruitShieldApp() {
           loading={loading}
           onBack={() => setScreen("landing")}
           onAnalyze={analyze}
-          onCandidatesUploaded={(count: number) => {
-            fetchShortlist(1);
-            showToast(`Loaded ${count.toLocaleString()} candidates. Pool replaced — ready to analyze!`, "success");
-          }}
+          onUploadCandidateFiles={handleUploadCandidateFiles}
           onOpenAgentConsole={() => setShowAgentConsoleModal(true)}
           onOpenBedrockConfig={() => setIsBedrockConfigOpen(true)}
           onLoadDemo={handleLoadDemoDataset}
@@ -1537,7 +1605,8 @@ export default function RecruitShieldApp() {
           logs={demoLogs}
           isComplete={demoComplete}
           error={demoError}
-          onClose={() => setIsDemoLoading(false)}
+          title={demoTitle}
+          onClose={handleCloseDemoModal}
         />
         <Toast toast={toast} onDismiss={() => setToast(null)} />
       </>
@@ -1558,7 +1627,8 @@ export default function RecruitShieldApp() {
           logs={demoLogs}
           isComplete={demoComplete}
           error={demoError}
-          onClose={() => setIsDemoLoading(false)}
+          title={demoTitle}
+          onClose={handleCloseDemoModal}
         />
         <Toast toast={toast} onDismiss={() => setToast(null)} />
       </>
@@ -1649,7 +1719,8 @@ export default function RecruitShieldApp() {
         logs={demoLogs}
         isComplete={demoComplete}
         error={demoError}
-        onClose={() => setIsDemoLoading(false)}
+        title={demoTitle}
+        onClose={handleCloseDemoModal}
       />
       <Toast toast={toast} onDismiss={() => setToast(null)} />
       <AIChatbotWidget jd={jd} />
@@ -1975,7 +2046,7 @@ function Ingest({
   loading,
   onBack,
   onAnalyze,
-  onCandidatesUploaded,
+  onUploadCandidateFiles,
   onOpenAgentConsole,
   onOpenBedrockConfig,
   onLoadDemo,
@@ -1991,7 +2062,7 @@ function Ingest({
   loading: boolean;
   onBack: () => void;
   onAnalyze: () => void;
-  onCandidatesUploaded: (count: number) => void;
+  onUploadCandidateFiles?: (list: FileList) => void;
   onOpenAgentConsole?: () => void;
   onOpenBedrockConfig?: () => void;
   onLoadDemo?: () => void;
@@ -2057,35 +2128,26 @@ function Ingest({
   const addFiles = async (list: FileList | null, type: 'jd' | 'candidates') => {
     if (!list || list.length === 0) return;
     
-    // Optimistic UI update
-    if (type === 'candidates') setFiles([...files, ...Array.from(list).map(f => f.name)]);
-    
-    const formData = new FormData();
-    if (type === 'jd') {
-      formData.append("file", list[0]);
-    } else {
-      for (let i = 0; i < list.length; i++) {
-        formData.append("files", list[i]);
+    if (type === 'candidates') {
+      if (onUploadCandidateFiles) {
+        onUploadCandidateFiles(list);
       }
+      return;
     }
     
+    const formData = new FormData();
+    formData.append("file", list[0]);
+    
     try {
-      const endpoint = type === 'jd' ? '/upload_jd' : '/upload_candidates';
-      const res = await fetch(`${API_BASE}${endpoint}`, {
+      const res = await fetch(`${API_BASE}/upload_jd`, {
         method: "POST",
         body: formData,
       });
       const data = await res.json();
-      
-      if (type === 'jd') {
-        if (data.text) setJd(data.text);
-        if (data.metadata && data.metadata.skills_found) setJdSkills(data.metadata.skills_found);
-        if (data.metadata && data.metadata.locations_found) setJdLocations(data.metadata.locations_found);
-        if (data.metadata && data.metadata.work_modes_found) setJdWorkModes(data.metadata.work_modes_found);
-      } else if (type === 'candidates') {
-        // Notify parent so it can refresh stats from backend
-        if (data.total_candidates) onCandidatesUploaded(data.total_candidates);
-      }
+      if (data.text) setJd(data.text);
+      if (data.metadata && data.metadata.skills_found) setJdSkills(data.metadata.skills_found);
+      if (data.metadata && data.metadata.locations_found) setJdLocations(data.metadata.locations_found);
+      if (data.metadata && data.metadata.work_modes_found) setJdWorkModes(data.metadata.work_modes_found);
     } catch (e) {
       console.error(e);
     }
