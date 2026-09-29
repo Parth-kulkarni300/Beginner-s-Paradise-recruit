@@ -263,8 +263,12 @@ def run_agent_chat(req: ChatRequest):
     if gemini_key:
         try:
             from google import genai
-            client_gemini = genai.Client(api_key=gemini_key)
-            
+            from google.genai import types
+            # Without an explicit timeout, a slow/rate-limited Gemini call can hang the
+            # request for a minute or more with the user just watching a spinner; bound it
+            # so we fail fast into the rule-based fallback engine below instead.
+            client_gemini = genai.Client(api_key=gemini_key, http_options=types.HttpOptions(timeout=12000))
+
             prompt = f"""You are RecruitShield AI, an autonomous recruiter co-pilot.
 
 USER QUESTION: "{user_query}"
