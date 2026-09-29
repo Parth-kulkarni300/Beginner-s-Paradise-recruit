@@ -650,7 +650,7 @@ export default function RecruitShieldApp() {
   const [screen, setScreen] = useState<"landing" | "ingest" | "pipeline" | "deepdive">("landing");
   const [selected, setSelected] = useState<Candidate>(candidates[0]);
   const [query, setQuery] = useState("");
-  const [threshold, setThreshold] = useState(0);
+  const [threshold, setThreshold] = useState(55);
   const [locations, setLocations] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [files, setFiles] = useState<string[]>([]);
@@ -695,7 +695,7 @@ export default function RecruitShieldApp() {
     });
   };
 
-  const cutoff = threshold > 0 ? threshold : 55;
+  const cutoff = threshold;
 
   const dynamicEligibleCount = useMemo(() => {
     return candidates.filter((c) => {
@@ -1399,7 +1399,7 @@ export default function RecruitShieldApp() {
       </>
     );
   const resetAllFilters = () => {
-    setThreshold(0);
+    setThreshold(55);
     setExpBuckets([]);
     setLocations([]);
     setWorkModes([]);
@@ -2296,7 +2296,7 @@ function Pipeline({
     workModes.length +
     expBuckets.length +
     eduLevels.length +
-    (threshold > 0 ? 1 : 0) +
+    (threshold !== 55 ? 1 : 0) +
     (openToRelocation ? 1 : 0);
 
   const currentTabTotalCount = useMemo(() => {
