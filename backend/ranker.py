@@ -2,6 +2,7 @@ import datetime
 import re
 import os
 import json
+import threading
 from pathlib import Path
 import numpy as np
 
@@ -55,20 +56,34 @@ if EMBEDDINGS_FILE.exists() and IDS_FILE.exists():
 
 # Global SentenceTransformer model reference (loaded only when needed)
 SENTENCE_MODEL = None
+_MODEL_LOAD_LOCK = threading.Lock()
+
+def _load_model_with_fallback(model_name):
+    from sentence_transformers import SentenceTransformer
+    # Try the local cache first (no Hugging Face Hub round-trips to check freshness);
+    # only hit the network if nothing is cached yet (first run on this machine).
+    try:
+        return SentenceTransformer(model_name, local_files_only=True)
+    except Exception:
+        pass
+    try:
+        return SentenceTransformer(model_name)
+    except Exception as e1:
+        print(f"Failed to load {model_name}, falling back to lightweight all-MiniLM-L6-v2: {e1}")
+        return SentenceTransformer('all-MiniLM-L6-v2')
 
 def get_sentence_model():
     global SENTENCE_MODEL
     if SENTENCE_MODEL is None:
-        model_name = os.environ.get("EMBEDDING_MODEL", "BAAI/bge-base-en-v1.5")
-        try:
-            from sentence_transformers import SentenceTransformer
-            try:
-                SENTENCE_MODEL = SentenceTransformer(model_name)
-            except Exception as e1:
-                print(f"Failed to load {model_name}, falling back to lightweight all-MiniLM-L6-v2: {e1}")
-                SENTENCE_MODEL = SentenceTransformer('all-MiniLM-L6-v2')
-        except Exception as e:
-            print(f"Warning: Failed to load SentenceTransformer: {e}")
+        # Guards against the startup warm-up thread and a request thread (e.g. /load_demo)
+        # both racing to load the model at the same time.
+        with _MODEL_LOAD_LOCK:
+            if SENTENCE_MODEL is None:
+                model_name = os.environ.get("EMBEDDING_MODEL", "BAAI/bge-base-en-v1.5")
+                try:
+                    SENTENCE_MODEL = _load_model_with_fallback(model_name)
+                except Exception as e:
+                    print(f"Warning: Failed to load SentenceTransformer: {e}")
     return SENTENCE_MODEL
 
 def encode_texts(texts, normalize=True):

@@ -108,10 +108,21 @@ CANDIDATE_DB_PATH = os.environ.get("CANDIDATES_PATH", str(Path(__file__).parent 
 
 @app.on_event("startup")
 def startup_event():
+    import threading
+
     logger.info("Backend starting. Attempting to load candidate database...")
     if load_candidates_file(CANDIDATE_DB_PATH) and agent_mod.CANDIDATES:
-        logger.info("Computing neural embeddings for the loaded candidate pool...")
-        compute_and_persist_embeddings(agent_mod.CANDIDATES)
+        # Loading the sentence-transformer model can take tens of seconds (or minutes on a
+        # cold cloud instance without a warm model cache). Doing it here synchronously used
+        # to block uvicorn from accepting *any* request, including /health, until it finished.
+        # Run it in the background instead so the server comes up immediately; endpoints that
+        # need embeddings fall back to rule-based ranking until EMBEDDINGS_LOADED flips true.
+        logger.info("Computing neural embeddings for the loaded candidate pool in the background...")
+        threading.Thread(
+            target=compute_and_persist_embeddings,
+            args=(agent_mod.CANDIDATES,),
+            daemon=True,
+        ).start()
 
 @app.get("/health")
 def health_check():
