@@ -746,8 +746,8 @@ export default function RecruitShieldApp() {
   const filtered = useMemo(
     () =>
       categoryFiltered.filter((c) => {
-        // Match score
-        if (c.score < threshold) return false;
+        // Match score (only filter by min threshold for non-unaligned tabs)
+        if (activeTab !== 'unaligned' && c.score < threshold) return false;
         // Experience bucket
         if (!expBucketMatch(c.experience)) return false;
         // Location
@@ -765,7 +765,7 @@ export default function RecruitShieldApp() {
         if (!`${c.name} ${c.role} ${c.location}`.toLowerCase().includes(query.toLowerCase())) return false;
         return true;
       }),
-    [query, threshold, expBuckets, locations, selectedSkills, eduLevels, openToRelocation, categoryFiltered],
+    [query, threshold, expBuckets, locations, selectedSkills, eduLevels, openToRelocation, categoryFiltered, activeTab],
   );
 
   // API: Fetch shortlist
