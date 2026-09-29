@@ -87,7 +87,7 @@ Final candidate score is a weighted combination of:
 - **Skill Match Score** (proficiency × duration × JD skill overlap) — 0.25 weight
 - **Title Relevance Score** (dynamic keyword-based title alignment) — 0.20 weight
 - **Career History Score** (keyword overlap with job history descriptions) — 0.10 weight
-- **Redrob Availability Multiplier** (notice period, activity recency, response rate) — 0.05 weight
+- **Candidate Availability Multiplier** (notice period, activity recency, response rate) — 0.05 weight
 
 ### 🤖 Autonomous Agent Console
 A live telemetry panel (`/agent_logs`) that lets recruiters see exactly what the AI did — which candidates were purged, why, and what the embedding similarity scores looked like.

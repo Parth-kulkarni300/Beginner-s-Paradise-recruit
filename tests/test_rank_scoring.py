@@ -10,7 +10,7 @@ from backend.ranker import score_candidate, rank_candidates
 
 def test_score_candidate_returns_none_for_a_honeypot(candidate_factory):
     honeypot = candidate_factory(
-        redrob_signals={
+        platform_signals={
             "signup_date": "2026-06-01",
             "last_active_date": "2023-01-01",
             "willing_to_relocate": False,
@@ -53,7 +53,7 @@ def test_rank_candidates_excludes_honeypots(candidate_factory):
     clean = candidate_factory(candidate_id="C-CLEAN")
     honeypot = candidate_factory(
         candidate_id="C-HONEYPOT",
-        redrob_signals={
+        platform_signals={
             "signup_date": "2026-06-01",
             "last_active_date": "2023-01-01",
             "willing_to_relocate": False,
@@ -67,7 +67,7 @@ def test_rank_candidates_excludes_honeypots(candidate_factory):
 def test_rank_candidates_sorts_by_score_descending(candidate_factory):
     strong = candidate_factory(
         candidate_id="C-STRONG",
-        redrob_signals={
+        platform_signals={
             "signup_date": "2023-01-01",
             "last_active_date": "2026-01-01",
             "willing_to_relocate": False,
@@ -78,7 +78,7 @@ def test_rank_candidates_sorts_by_score_descending(candidate_factory):
     )
     weak = candidate_factory(
         candidate_id="C-WEAK",
-        redrob_signals={
+        platform_signals={
             "signup_date": "2023-01-01",
             "last_active_date": "2026-01-01",
             "willing_to_relocate": False,

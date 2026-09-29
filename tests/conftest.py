@@ -11,7 +11,7 @@ def make_candidate(
     skills=None,
     career_history=None,
     education=None,
-    redrob_signals=None,
+    platform_signals=None,
     current_title="Software Engineer",
     current_company="Acme Corp",
     location="Bangalore",
@@ -48,7 +48,7 @@ def make_candidate(
         "education": education if education is not None else [
             {"institution": "Test University", "degree": "B.E.", "tier": "tier_1"}
         ],
-        "redrob_signals": redrob_signals if redrob_signals is not None else {
+        "redrob_signals": platform_signals if platform_signals is not None else {
             "signup_date": "2023-01-01",
             "last_active_date": "2026-01-01",
             "open_to_work_flag": True,

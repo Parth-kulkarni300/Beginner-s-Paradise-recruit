@@ -265,7 +265,6 @@ def is_default_jd(jd_text):
     landmarks = [
         "senior ai engineer",
         "founding team",
-        "redrob ai",
         "embeddings-based retrieval systems",
         "vector databases"
     ]
@@ -573,7 +572,7 @@ def calculate_history_score(cand, jd_text=""):
 
 def calculate_availability_multiplier(cand):
     """
-    Convert Redrob activity signals into a multiplier reflecting candidate availability.
+    Convert platform activity signals into a multiplier reflecting candidate availability.
     Signals that are simply absent (e.g. candidates ingested from a plain resume PDF,
     which carries no recruiter-engagement telemetry) are treated as neutral (1.0x),
     not as the worst possible value — missing data should not read as bad data.

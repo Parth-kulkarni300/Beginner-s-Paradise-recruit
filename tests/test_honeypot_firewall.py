@@ -13,7 +13,7 @@ def test_clean_candidate_is_not_flagged(candidate_factory):
 
 def test_flags_signup_after_last_active(candidate_factory):
     cand = candidate_factory(
-        redrob_signals={
+        platform_signals={
             "signup_date": "2026-06-01",
             "last_active_date": "2023-01-01",
             "willing_to_relocate": False,
