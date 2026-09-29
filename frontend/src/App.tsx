@@ -3391,6 +3391,30 @@ function AgentConsoleModal({
 
   if (!isOpen) return null;
 
+  const formatLogTime = (ts: string) => {
+    if (!ts) return new Date().toLocaleTimeString([], { hour12: false });
+    const parsed = new Date(ts);
+    if (!isNaN(parsed.getTime())) {
+      return parsed.toLocaleTimeString([], { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    }
+    const parts = ts.split(':');
+    if (parts.length === 3) {
+      const now = new Date();
+      const utcDate = new Date(Date.UTC(
+        now.getUTCFullYear(),
+        now.getUTCMonth(),
+        now.getUTCDate(),
+        parseInt(parts[0], 10),
+        parseInt(parts[1], 10),
+        parseInt(parts[2], 10)
+      ));
+      if (!isNaN(utcDate.getTime())) {
+        return utcDate.toLocaleTimeString([], { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      }
+    }
+    return ts;
+  };
+
   const getEventBadge = (event: string) => {
     switch (event) {
       case "TOOL_CALL":
@@ -3632,7 +3656,7 @@ function AgentConsoleModal({
                 >
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                     <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                      <span style={{ color: "#64748b", fontSize: "12px" }}>[{log.timestamp}]</span>
+                      <span style={{ color: "#64748b", fontSize: "12px" }}>[{formatLogTime(log.timestamp)}]</span>
                       <span
                         style={{
                           padding: "2px 7px",

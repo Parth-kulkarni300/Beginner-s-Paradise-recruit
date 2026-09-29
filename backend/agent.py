@@ -22,7 +22,7 @@ EXECUTION_LOGS = []
 
 def log_agent_event(event_type: str, tool_name: str, message: str, details=None):
     log_entry = {
-        "timestamp": datetime.datetime.now().strftime("%H:%M:%S"),
+        "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat(),
         "event": event_type,
         "tool": tool_name,
         "message": message,

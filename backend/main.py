@@ -507,18 +507,18 @@ def get_agent_logs():
     import backend.agent as agent_mod
     import datetime
     
-    now_dt = datetime.datetime.now()
+    now_dt = datetime.datetime.now(datetime.timezone.utc)
     
     # Check if live runtime execution logs exist
     if agent_mod.EXECUTION_LOGS:
         logs_to_return = agent_mod.EXECUTION_LOGS
     else:
         # Dynamically compute staggered live timestamps relative to current request time
-        t0 = (now_dt - datetime.timedelta(seconds=8)).strftime("%H:%M:%S")
-        t1 = (now_dt - datetime.timedelta(seconds=6)).strftime("%H:%M:%S")
-        t2 = (now_dt - datetime.timedelta(seconds=4)).strftime("%H:%M:%S")
-        t3 = (now_dt - datetime.timedelta(seconds=2)).strftime("%H:%M:%S")
-        t4 = now_dt.strftime("%H:%M:%S")
+        t0 = (now_dt - datetime.timedelta(seconds=8)).isoformat()
+        t1 = (now_dt - datetime.timedelta(seconds=6)).isoformat()
+        t2 = (now_dt - datetime.timedelta(seconds=4)).isoformat()
+        t3 = (now_dt - datetime.timedelta(seconds=2)).isoformat()
+        t4 = now_dt.isoformat()
 
         logs_to_return = [
             {
