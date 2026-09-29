@@ -18,8 +18,7 @@ import xml.etree.ElementTree as ET
 
 import backend.agent as agent_mod
 from backend.agent import (
-    load_candidates_file, 
-    get_recruiter_agent, 
+    load_candidates_file,
     audit_candidate_integrity,
     apply_consulting_filter,
     rank_and_reason_candidates
@@ -96,9 +95,6 @@ app.add_middleware(
 class ChatRequest(BaseModel):
     message: str
     job_description: Optional[str] = None
-    aws_access_key: Optional[str] = None
-    aws_secret_key: Optional[str] = None
-    aws_region: Optional[str] = "us-east-2"
 
 # Initialize candidate database on startup.
 # CANDIDATES_PATH lets a deployer point at a private/production dataset; if unset
@@ -217,12 +213,6 @@ def run_agent_chat(req: ChatRequest):
     if not agent_mod.CANDIDATES:
         raise HTTPException(status_code=400, detail="No candidates loaded. Please upload a candidates file first.")
     
-    # Skip Bedrock for chatbot Q&A — Bedrock agent always runs the full screening pipeline
-    # (audit + filter + rank) and formats output as raw tool dumps, not conversational answers.
-    # All chatbot queries are handled exclusively by Gemini 2.5 Flash with full candidate context.
-
-
-
     # 2. Run Candidate Screening Pipeline to ensure shortlist & honeypot state are fresh
     steps = []
     try:
@@ -513,7 +503,7 @@ EXECUTION_LOGS = []
 
 @app.get("/agent_logs")
 def get_agent_logs():
-    """Returns execution logs of the Strands Agent co-pilot backbone."""
+    """Returns execution logs of the RecruitShield agent co-pilot backbone."""
     import backend.agent as agent_mod
     import datetime
     
@@ -534,8 +524,8 @@ def get_agent_logs():
             {
                 "timestamp": t0,
                 "event": "INFO",
-                "tool": "StrandsKernel",
-                "message": f"Initialized Strands Agent backbone (AWS Strands Agents SDK v0.1.0). Target database: {len(agent_mod.CANDIDATES)} candidates.",
+                "tool": "RecruitShieldAgent",
+                "message": f"Initialized RecruitShield agent backbone (Gemini 2.5 Flash). Target database: {len(agent_mod.CANDIDATES)} candidates.",
                 "details": "Agent loop configured with 5-Point Anomaly Firewall, Consulting Score Adjuster, and BAAI/bge-base-en-v1.5 768-dim Embeddings."
             },
             {
@@ -562,15 +552,15 @@ def get_agent_logs():
             {
                 "timestamp": t4,
                 "event": "TOOL_CALL",
-                "tool": "StrandsKernel",
+                "tool": "RecruitShieldAgent",
                 "message": "Autonomous agent loop complete. Candidate graph ranked successfully.",
                 "details": f"Shortlist active for {len(agent_mod.CANDIDATES)} eligible candidates."
             }
         ]
     
     return {
-        "sdk": "AWS Strands Agents SDK",
-        "model": "BAAI/bge-base-en-v1.5 (768-dim) + Gemini 2.5 / Bedrock Nova Pro",
+        "sdk": "RecruitShield Agent",
+        "model": "BAAI/bge-base-en-v1.5 (768-dim) + Gemini 2.5 Flash",
         "status": "ACTIVE / READY",
         "total_candidates": len(agent_mod.CANDIDATES),
         "honeypots_purged": len(agent_mod.HONEYPOT_CANDIDATES),

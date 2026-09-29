@@ -86,243 +86,6 @@ type Candidate = {
   skills: { name: string; level: string; value: number }[];
 };
 
-// AWS Bedrock credentials, entered once via BedrockConfigModal and persisted to
-// localStorage so both the main screening flow (analyze()) and the standalone
-// floating co-pilot (AIChatbotWidget, a separate component tree) can attach them
-// to /chat requests without prop-drilling.
-const AWS_CREDS_STORAGE_KEY = "rs_aws_creds";
-
-type AwsCreds = { accessKey: string; secretKey: string; region: string };
-
-function loadAwsCreds(): AwsCreds {
-  try {
-    const raw = localStorage.getItem(AWS_CREDS_STORAGE_KEY);
-    if (!raw) return { accessKey: "", secretKey: "", region: "us-east-2" };
-    const parsed = JSON.parse(raw);
-    return {
-      accessKey: parsed.accessKey || "",
-      secretKey: parsed.secretKey || "",
-      region: parsed.region || "us-east-2",
-    };
-  } catch {
-    return { accessKey: "", secretKey: "", region: "us-east-2" };
-  }
-}
-
-function getAwsCredsPayload(): { aws_access_key?: string; aws_secret_key?: string; aws_region?: string } {
-  const creds = loadAwsCreds();
-  if (!creds.accessKey || !creds.secretKey) return {};
-  return {
-    aws_access_key: creds.accessKey,
-    aws_secret_key: creds.secretKey,
-    aws_region: creds.region || "us-east-2",
-  };
-}
-
-function BedrockConfigModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
-  const [creds, setCreds] = useState<AwsCreds>(() => loadAwsCreds());
-  const [saved, setSaved] = useState(false);
-
-  useEffect(() => {
-    if (isOpen) {
-      setCreds(loadAwsCreds());
-      setSaved(false);
-    }
-  }, [isOpen]);
-
-  if (!isOpen) return null;
-
-  const isConfigured = !!(creds.accessKey && creds.secretKey);
-
-  const handleSave = () => {
-    localStorage.setItem(AWS_CREDS_STORAGE_KEY, JSON.stringify(creds));
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
-  };
-
-  const handleClear = () => {
-    localStorage.removeItem(AWS_CREDS_STORAGE_KEY);
-    setCreds({ accessKey: "", secretKey: "", region: "us-east-2" });
-  };
-
-  const inputStyle: React.CSSProperties = {
-    width: "100%",
-    padding: "10px 12px",
-    borderRadius: "8px",
-    background: "rgba(255, 255, 255, 0.04)",
-    border: "1px solid rgba(255, 255, 255, 0.12)",
-    color: "#e7edf6",
-    fontSize: "13px",
-    fontFamily: "inherit",
-    outline: "none",
-  };
-
-  const labelStyle: React.CSSProperties = {
-    display: "block",
-    fontSize: "11px",
-    fontWeight: 700,
-    color: "#94a3b8",
-    textTransform: "uppercase",
-    letterSpacing: "0.05em",
-    marginBottom: "6px",
-  };
-
-  return (
-    <div
-      style={{
-        position: "fixed",
-        inset: 0,
-        zIndex: 9999,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        backgroundColor: "rgba(3, 7, 13, 0.85)",
-        backdropFilter: "blur(12px)",
-        padding: "20px",
-      }}
-      onClick={onClose}
-    >
-      <div
-        style={{
-          width: "100%",
-          maxWidth: "480px",
-          backgroundColor: "#0d141e",
-          border: "1px solid rgba(56, 189, 248, 0.4)",
-          borderRadius: "14px",
-          boxShadow: "0 25px 70px rgba(56, 189, 248, 0.25), 0 0 40px rgba(0, 0, 0, 0.8)",
-          overflow: "hidden",
-          color: "#e7edf6",
-          padding: "24px",
-        }}
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "16px" }}>
-          <div>
-            <div style={{ fontSize: "11px", fontWeight: 800, color: "#38bdf8", textTransform: "uppercase", letterSpacing: "0.06em" }}>
-              AWS Bedrock Config
-            </div>
-            <h3 style={{ margin: "4px 0 0", fontSize: "18px", fontWeight: 700, color: "#f8fafc" }}>
-              Connect the live Strands + Bedrock agent
-            </h3>
-          </div>
-          <button
-            onClick={onClose}
-            style={{
-              width: "32px",
-              height: "32px",
-              borderRadius: "6px",
-              background: "rgba(255, 255, 255, 0.05)",
-              border: "1px solid rgba(255, 255, 255, 0.1)",
-              color: "#94a3b8",
-              cursor: "pointer",
-              display: "grid",
-              placeItems: "center",
-            }}
-          >
-            <X size={16} />
-          </button>
-        </div>
-
-        <p style={{ fontSize: "13px", color: "#94a3b8", lineHeight: 1.5, marginBottom: "18px" }}>
-          Paste an AWS Access Key/Secret Key with Bedrock access to run the agent live on
-          Amazon Nova Pro via the Strands Agents SDK. Credentials are kept only in this
-          browser's local storage and sent directly to your own backend on every request —
-          never persisted server-side. Leave this blank to keep using the local rule-based
-          simulator mode.
-        </p>
-
-        <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
-          <div>
-            <label style={labelStyle}>AWS Access Key ID</label>
-            <input
-              type="text"
-              value={creds.accessKey}
-              onChange={(e) => setCreds((c) => ({ ...c, accessKey: e.target.value }))}
-              placeholder="AKIA..."
-              style={inputStyle}
-              autoComplete="off"
-              spellCheck={false}
-            />
-          </div>
-          <div>
-            <label style={labelStyle}>AWS Secret Access Key</label>
-            <input
-              type="password"
-              value={creds.secretKey}
-              onChange={(e) => setCreds((c) => ({ ...c, secretKey: e.target.value }))}
-              placeholder="••••••••••••••••••••"
-              style={inputStyle}
-              autoComplete="off"
-              spellCheck={false}
-            />
-          </div>
-          <div>
-            <label style={labelStyle}>AWS Region</label>
-            <input
-              type="text"
-              value={creds.region}
-              onChange={(e) => setCreds((c) => ({ ...c, region: e.target.value }))}
-              placeholder="us-east-2"
-              style={inputStyle}
-              autoComplete="off"
-              spellCheck={false}
-            />
-          </div>
-        </div>
-
-        <div style={{ display: "flex", alignItems: "center", gap: "10px", marginTop: "10px" }}>
-          <div
-            style={{
-              width: "8px",
-              height: "8px",
-              borderRadius: "50%",
-              background: isConfigured ? "#22c55e" : "#64748b",
-            }}
-          />
-          <span style={{ fontSize: "12px", color: "#94a3b8" }}>
-            {isConfigured ? "Live Bedrock mode will be attempted on next request" : "Running in local simulator mode"}
-          </span>
-        </div>
-
-        <div style={{ display: "flex", gap: "10px", marginTop: "20px" }}>
-          <button
-            onClick={handleClear}
-            style={{
-              flex: 1,
-              padding: "10px",
-              borderRadius: "8px",
-              background: "rgba(255, 255, 255, 0.05)",
-              border: "1px solid rgba(255, 255, 255, 0.12)",
-              color: "#e7edf6",
-              fontWeight: 600,
-              fontSize: "13px",
-              cursor: "pointer",
-            }}
-          >
-            Clear
-          </button>
-          <button
-            onClick={handleSave}
-            style={{
-              flex: 2,
-              padding: "10px",
-              borderRadius: "8px",
-              background: saved ? "#16a34a" : "linear-gradient(135deg, #06b6d4, #0ea5e9)",
-              border: "none",
-              color: "#03070d",
-              fontWeight: 700,
-              fontSize: "13px",
-              cursor: "pointer",
-            }}
-          >
-            {saved ? "Saved ✓" : "Save Configuration"}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 interface DemoLoadingModalProps {
   isOpen: boolean;
   progress: number;
@@ -902,7 +665,6 @@ export default function RecruitShieldApp() {
   const [openToRelocation, setOpenToRelocation] = useState(false);
   const [activeTab, setActiveTab] = useState<'eligible' | 'unaligned' | 'all' | 'shortlisted'>('eligible');
   const [isHowItWorksOpen, setIsHowItWorksOpen] = useState(false);
-  const [isBedrockConfigOpen, setIsBedrockConfigOpen] = useState(false);
   const [isDemoLoading, setIsDemoLoading] = useState(false);
   const [demoProgress, setDemoProgress] = useState(0);
   const [demoStep, setDemoStep] = useState(0);
@@ -1296,7 +1058,7 @@ export default function RecruitShieldApp() {
       <tr>
         <td style="border: none; padding: 0;">
           <h1>🛡️ RecruitShield AI — Executive Shortlist Report</h1>
-          <p>Autonomous Recruiter Intelligence & Candidate Verification | AWS Strands Agents SDK</p>
+          <p>Autonomous Recruiter Intelligence & Candidate Verification | Powered by Gemini 2.5</p>
         </td>
         <td style="border: none; padding: 0; text-align: right; font-size: 12px; color: #64748b; vertical-align: bottom;">
           Date: <strong>${currentDate}</strong>
@@ -1356,7 +1118,7 @@ export default function RecruitShieldApp() {
   </table>
 
   <div class="footer">
-    Report generated automatically by RecruitShield AI (AWS Strands Agents SDK Co-Pilot)
+    Report generated automatically by RecruitShield AI (Gemini 2.5 Co-Pilot)
   </div>
 </div>
 </body>
@@ -1381,7 +1143,7 @@ export default function RecruitShieldApp() {
       const res = await fetch(`${API_BASE}/chat`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: "rank top candidates", job_description: jd, ...getAwsCredsPayload() })
+        body: JSON.stringify({ message: "rank top candidates", job_description: jd })
       });
       
       if (!res.ok) {
@@ -1589,7 +1351,6 @@ export default function RecruitShieldApp() {
           onAnalyze={analyze}
           onUploadCandidateFiles={handleUploadCandidateFiles}
           onOpenAgentConsole={() => setShowAgentConsoleModal(true)}
-          onOpenBedrockConfig={() => setIsBedrockConfigOpen(true)}
           onLoadDemo={handleLoadDemoDataset}
           showToast={showToast}
         />
@@ -1601,10 +1362,6 @@ export default function RecruitShieldApp() {
           isOpen={isHowItWorksOpen}
           onClose={() => setIsHowItWorksOpen(false)}
           onLaunchWorkspace={() => setScreen("pipeline")}
-        />
-        <BedrockConfigModal
-          isOpen={isBedrockConfigOpen}
-          onClose={() => setIsBedrockConfigOpen(false)}
         />
         <DemoLoadingModal
           isOpen={isDemoLoading}
@@ -1690,7 +1447,6 @@ export default function RecruitShieldApp() {
         onOpenBreakdown={(c) => setBreakdownCandidate(c)}
         onOpenHoneypots={fetchHoneypots}
         onOpenAgentConsole={() => setShowAgentConsoleModal(true)}
-        onOpenBedrockConfig={() => setIsBedrockConfigOpen(true)}
         onToggleShortlist={toggleShortlist}
         onShortlistPage={handleShortlistPage}
         isAllPageShortlisted={isAllPageShortlisted}
@@ -1715,10 +1471,6 @@ export default function RecruitShieldApp() {
         isOpen={isHowItWorksOpen}
         onClose={() => setIsHowItWorksOpen(false)}
         onLaunchWorkspace={() => setScreen("pipeline")}
-      />
-      <BedrockConfigModal
-        isOpen={isBedrockConfigOpen}
-        onClose={() => setIsBedrockConfigOpen(false)}
       />
       <DemoLoadingModal
         isOpen={isDemoLoading}
@@ -2017,11 +1769,10 @@ function Landing({ onLaunch, onOpenHowItWorks }: { onLaunch: () => void; onOpenH
             <div className="feature-icon">
               <LockKeyhole size={18} />
             </div>
-            <h3>Local-only credentials</h3>
+            <h3>Server-side credentials</h3>
             <p>
-              AWS Bedrock keys are stored in your browser and sent straight
-              to your own backend on each request — never persisted
-              server-side.
+              The Gemini API key lives only in the backend's environment —
+              it's never sent to or stored in the browser.
             </p>
           </div>
           <div className="security-card">
@@ -2056,7 +1807,6 @@ function Ingest({
   onAnalyze,
   onUploadCandidateFiles,
   onOpenAgentConsole,
-  onOpenBedrockConfig,
   onLoadDemo,
   showToast,
 }: {
@@ -2072,7 +1822,6 @@ function Ingest({
   onAnalyze: () => void;
   onUploadCandidateFiles?: (list: FileList) => void;
   onOpenAgentConsole?: () => void;
-  onOpenBedrockConfig?: () => void;
   onLoadDemo?: () => void;
   showToast: (message: string, type?: "success" | "error" | "info") => void;
 }) {
@@ -2185,7 +1934,7 @@ function Ingest({
           opacity={0.8}
         />
       </div>
-      <WorkspaceHeader step="01 / DATA INGESTION" onBack={onBack} onOpenAgentConsole={onOpenAgentConsole} onOpenBedrockConfig={onOpenBedrockConfig} />
+      <WorkspaceHeader step="01 / DATA INGESTION" onBack={onBack} onOpenAgentConsole={onOpenAgentConsole} />
       <section className="workspace-content narrow">
         <div className="section-kicker">
           <Database size={15} /> DATA INGESTION PIPELINE
@@ -2406,13 +2155,11 @@ function WorkspaceHeader({
   step,
   onBack,
   onOpenHowItWorks,
-  onOpenBedrockConfig,
 }: {
   step: string;
   onBack: () => void;
   onOpenAgentConsole?: () => void;
   onOpenHowItWorks?: () => void;
-  onOpenBedrockConfig?: () => void;
 }) {
   return (
     <header className="workspace-header">
@@ -2423,11 +2170,6 @@ function WorkspaceHeader({
       <div className="flex items-center gap-4">
         <span className="micro-label text-muted-foreground">{step}</span>
         <StatusDot />
-        {onOpenBedrockConfig && (
-          <button className="icon-button" onClick={onOpenBedrockConfig} title="AWS Bedrock Config">
-            <LockKeyhole size={16} />
-          </button>
-        )}
         {onOpenHowItWorks && (
           <button className="icon-button" onClick={onOpenHowItWorks} title="How it works & Platform Guide">
             <CircleHelp size={16} />
@@ -2476,7 +2218,6 @@ function Pipeline({
   onOpenBreakdown,
   onOpenHoneypots,
   onOpenAgentConsole,
-  onOpenBedrockConfig,
   onToggleShortlist,
   onShortlistPage,
   isAllPageShortlisted,
@@ -2515,7 +2256,6 @@ function Pipeline({
   onOpenBreakdown: (c: Candidate) => void;
   onOpenHoneypots: () => void;
   onOpenAgentConsole?: () => void;
-  onOpenBedrockConfig?: () => void;
   onToggleShortlist: (id: number) => void;
   onShortlistPage: () => void;
   isAllPageShortlisted: boolean;
@@ -2575,7 +2315,7 @@ function Pipeline({
 
   return (
     <main className="workspace min-h-screen">
-      <WorkspaceHeader step="02 / MATCH" onBack={onBack} onOpenAgentConsole={onOpenAgentConsole} onOpenBedrockConfig={onOpenBedrockConfig} />
+      <WorkspaceHeader step="02 / MATCH" onBack={onBack} onOpenAgentConsole={onOpenAgentConsole} />
       <div className="pipeline-layout">
         <aside className="filter-sidebar">
           {/* Header */}
@@ -2847,7 +2587,7 @@ function Pipeline({
                 }}
               >
                 <Terminal size={15} style={{ color: "#38bdf8" }} />
-                <span>Strands Agent Console</span>
+                <span>Agent Console</span>
               </button>
               <button className="sort-button">
                 Ranked by <b>Match score</b>
@@ -3728,7 +3468,7 @@ function AgentConsoleModal({
             <div>
               <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
                 <h2 style={{ margin: 0, fontSize: "18px", fontWeight: 700, color: "#f8fafc", letterSpacing: "-0.02em" }}>
-                  AWS Strands Agent Execution Console
+                  RecruitShield Agent Execution Console
                 </h2>
                 <span
                   style={{
@@ -3820,14 +3560,11 @@ function AgentConsoleModal({
           {/* Tech Badges */}
           <div style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "11px" }}>
             <span style={{ color: "#64748b", fontWeight: 600 }}>ORCHESTRATION:</span>
-            <span style={{ padding: "3px 8px", borderRadius: "4px", background: "rgba(6, 182, 212, 0.1)", color: "#38bdf8", border: "1px solid rgba(6, 182, 212, 0.2)" }}>
-              AWS Strands Agent SDK
-            </span>
             <span style={{ padding: "3px 8px", borderRadius: "4px", background: "rgba(168, 85, 247, 0.1)", color: "#c084fc", border: "1px solid rgba(168, 85, 247, 0.2)" }}>
               BAAI/bge-base-en-v1.5 (768-dim)
             </span>
             <span style={{ padding: "3px 8px", borderRadius: "4px", background: "rgba(16, 185, 129, 0.1)", color: "#34d399", border: "1px solid rgba(16, 185, 129, 0.2)" }}>
-              Bedrock / Gemini 2.5
+              Gemini 2.5 Flash
             </span>
           </div>
 
@@ -3869,7 +3606,7 @@ function AgentConsoleModal({
           {loading && logs.length === 0 ? (
             <div style={{ padding: "60px", textAlign: "center", color: "#38bdf8" }}>
               <Activity size={28} className="animate-spin" style={{ margin: "0 auto 12px" }} />
-              <div>Connecting to AWS Strands Agent Execution Stream...</div>
+              <div>Connecting to Agent Execution Stream...</div>
             </div>
           ) : filteredLogs.length === 0 ? (
             <div style={{ padding: "60px", textAlign: "center", color: "#64748b" }}>
@@ -3998,7 +3735,7 @@ function AIChatbotWidget({ jd }: { jd: string }) {
   >([
     {
       sender: "ai",
-      text: "👋 Hi! I'm your RecruitShield AI Co-Pilot powered by AWS Strands Agents & Bedrock.\n\nAsk me anything about candidate rankings, honeypot prompt injection defenses, or specific candidate qualifications!",
+      text: "👋 Hi! I'm your RecruitShield AI Co-Pilot powered by Gemini 2.5 Flash.\n\nAsk me anything about candidate rankings, honeypot prompt injection defenses, or specific candidate qualifications!",
       time: "Just now",
     },
   ]);
@@ -4254,7 +3991,7 @@ function AIChatbotWidget({ jd }: { jd: string }) {
                 </div>
                 <div style={{ fontSize: "11px", color: "#34d399", display: "flex", alignItems: "center", gap: "5px" }}>
                   <span style={{ width: "6px", height: "6px", borderRadius: "50%", background: "#34d399" }} />
-                  AWS Bedrock & Strands Agents
+                  Gemini 2.5 Flash
                 </div>
               </div>
             </div>
@@ -4417,8 +4154,8 @@ function HowItWorksModal({
       step: "04",
       title: "Autonomous Agent Orchestration (Agent Console)",
       icon: <Terminal size={22} style={{ color: "#60a5fa" }} />,
-      desc: "AWS Strands Agents coordinate multi-agent reasoning steps in real-time. Recruiters can monitor live agent thoughts, tool execution, and verification logs in the Agent Console.",
-      badge: "AWS Strands Agents SDK"
+      desc: "The recruiter agent coordinates multi-step reasoning in real-time. Recruiters can monitor live agent thoughts, tool execution, and verification logs in the Agent Console.",
+      badge: "Gemini 2.5 Flash"
     },
     {
       step: "05",

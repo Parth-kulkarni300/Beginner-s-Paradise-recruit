@@ -3,8 +3,6 @@ import json
 import logging
 import numpy as np
 from pathlib import Path
-from strands import Agent, tool
-from strands.models import BedrockModel
 from backend.ranker import is_honeypot, check_honeypot_reasons, is_consulting_only, score_candidate, rank_candidates
 
 import datetime
@@ -79,8 +77,6 @@ def load_candidates_file(file_path: str):
         logger.error(f"Error loading candidates: {e}")
         return False
 
-# Define Strands Agent Custom Tools
-@tool
 def audit_candidate_integrity() -> str:
     """
     Scans the loaded candidate database using a 5-point integrity check.
@@ -142,7 +138,6 @@ def audit_candidate_integrity() -> str:
         
     return summary
 
-@tool
 def apply_consulting_filter() -> str:
     """
     Evaluates candidate work history for IT consulting/services experience
@@ -170,7 +165,6 @@ def apply_consulting_filter() -> str:
         f"Full active pool retained: {len(CANDIDATES)} candidates."
     )
 
-@tool
 def rank_and_reason_candidates(job_description: str, top_n: int = 50) -> str:
     """
     Uses BGE-small-v1.5 embeddings and title matching to rank the remaining candidate pool.
@@ -213,71 +207,9 @@ def rank_and_reason_candidates(job_description: str, top_n: int = 50) -> str:
 
     log_agent_event(
         "TOOL_CALL",
-        "StrandsKernel",
+        "RecruitShieldAgent",
         f"Autonomous agent loop complete. Shortlist of top {len(summary_list)} candidates ranked successfully.",
         details=f"Rank #01 candidate: {summary_list[0]['name'] if summary_list else 'N/A'} (Score: {summary_list[0]['score'] if summary_list else 0})"
     )
 
     return json.dumps(summary_list, indent=2)
-
-
-# Recruiter Agent Initialization Helper
-def get_recruiter_agent(aws_access_key: str = None, aws_secret_key: str = None, aws_region: str = "us-east-2"):
-    """
-    Instantiates and returns the Strands Agent. 
-    If AWS credentials are provided, configures BedrockModel.
-    Otherwise, returns the agent with a local fallback router.
-    """
-    system_prompt = (
-        "You are the RecruitShield AI Agent, an autonomous recruiter co-pilot built with the AWS Strands Agents SDK.\n"
-        "Your task is to guide the user (a recruiter or hiring manager) in finding and auditing candidate profiles.\n"
-        "You have access to candidate database tools: 'audit_candidate_integrity', 'apply_consulting_filter', "
-        "and 'rank_and_reason_candidates'.\n\n"
-        "Always execute the pipeline logically when asked to find candidates:\n"
-        "1. First, check and audit database integrity to clean fake profiles (honeypots).\n"
-        "2. Apply soft score adjustment (-0.05) to consulting profiles without banning them.\n"
-        "3. Rank the full candidate pool based on semantic similarity and return the top ranked results with explanations.\n\n"
-        "Present your actions clearly, explaining which tools you are running and why."
-    )
-    
-    # Check if we can run BedrockModel
-    aws_configured = (
-        aws_access_key is not None or 
-        os.environ.get("AWS_ACCESS_KEY_ID") is not None or 
-        Path("~/.aws/credentials").expanduser().exists()
-    )
-    
-    model = None
-    if aws_configured:
-        try:
-            import boto3
-            # If explicit keys were passed from UI, construct a custom session
-            session = None
-            if aws_access_key and aws_secret_key:
-                session = boto3.Session(
-                    aws_access_key_id=aws_access_key,
-                    aws_secret_access_key=aws_secret_key,
-                    region_name=aws_region
-                )
-            
-            # Using Claude 3 Sonnet or Haiku on Bedrock as our Strands Agent backbone
-            model = BedrockModel(
-                model_id="amazon.nova-pro-v1:0",
-                boto_session=session
-            )
-            logger.info("Initialized Strands Agent with AWS Bedrock Model.")
-        except Exception as e:
-            logger.error(f"Failed to initialize Bedrock model: {e}. Falling back to local routing.")
-            
-    if model is None:
-        raise ValueError("AWS Bedrock model is not configured. Falling back to Gemini / Smart reasoning engine.")
-
-    tools_list = [audit_candidate_integrity, apply_consulting_filter, rank_and_reason_candidates]
-    
-    return Agent(
-        model=model,
-        tools=tools_list,
-        system_prompt=system_prompt,
-        name="RecruitShield Agent",
-        description="Autonomous co-pilot for candidate screening and integrity auditing"
-    )
