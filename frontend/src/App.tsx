@@ -115,7 +115,7 @@ const DEMO_STEPS = [
   },
   {
     name: "BGE Neural Vector Embeddings",
-    desc: "Computing 1024-dimensional dense skill vector embeddings",
+    desc: "Computing 768-dimensional dense skill vector embeddings",
     icon: Sparkles,
   },
   {
@@ -1205,7 +1205,7 @@ export default function RecruitShieldApp() {
     const stepLogs = [
       "[FIREWALL] Running 5-Point Anomaly Firewall on candidate profiles...",
       "[BIAS-MITIGATION] Scrubbing prestige bias & normalizing experience metrics...",
-      "[EMBEDDINGS] Computing 1024-dim dense vector embeddings via BGE model...",
+      "[EMBEDDINGS] Computing 768-dim dense vector embeddings via BGE model...",
       "[CO-PILOT] Assembling candidate shortlist & recruiter radar matrix...",
     ];
 
