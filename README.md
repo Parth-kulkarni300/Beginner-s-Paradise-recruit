@@ -243,7 +243,8 @@ This was our team's first time building an end-to-end AI-powered full-stack prod
 ## 👥 Team
 
 **Team Beginner's Paradise**
-- Parth Kulkarni — Full-stack development, ranking pipeline, agent architecture
+- Parth Kulkarni — Full-stack development, agent architecture
+- Ishika Mahadar - Ranking pipeline
 
 ---
 
@@ -258,6 +259,4 @@ This was our team's first time building an end-to-end AI-powered full-stack prod
 
 ---
 
-## 📜 License
 
-MIT License — open-source and free to use.
