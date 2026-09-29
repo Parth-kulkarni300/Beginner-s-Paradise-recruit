@@ -402,6 +402,19 @@ CRITICAL INSTRUCTIONS:
                             f"- **Experience & Location**: {cand.get('years_exp', 'N/A')} yrs | {cand.get('location', 'N/A')}\n" \
                             f"- **AI Recruiter Reasoning**: {reasoning}"
 
+        elif any(k in q_lower for k in ["honeypot", "disqualif", "not hire", "reject", "fraud", "trap"]):
+            if agent_mod.HONEYPOT_CANDIDATES:
+                h_lines = []
+                for h in agent_mod.HONEYPOT_CANDIDATES:
+                    h_name = h.get("name") or h.get("profile", {}).get("anonymized_name", "Unknown Candidate")
+                    h_id = h.get("candidate_id", "N/A")
+                    reasons = h.get("redrob_sign_flags") or h.get("honeypot_reasons") or ["Skill experience anomaly (e.g. 10 yrs experience with 2 yrs overall experience)"]
+                    h_lines.append(f"- ⚠️ **{h_name}** (`{h_id}`): Disqualified due to security firewall rules ({', '.join(reasons)})")
+                response_text = f"### 🛡️ RecruitShield Honeypot & Disqualification Report\n\n" \
+                                f"RecruitShield Firewall detected and auto-purged **{len(agent_mod.HONEYPOT_CANDIDATES)} suspicious/honeypot candidate(s)**:\n\n" + "\n".join(h_lines)
+            else:
+                response_text = "### 🛡️ RecruitShield Honeypot Report\n\nNo honeypot or fraudulent profiles were detected in the active candidate pool. All candidates passed the 5-Point Anomaly Firewall."
+
         else:
             top_3 = (active_list or [])[:3]
             top_lines = [f"1. **{c.get('name')}** (Rank #{c.get('rank', '1')}) — `{round(c.get('score', 0)*100, 1) if c.get('score', 0) <= 1.0 else round(c.get('score', 0), 1)}% Match` | *{c.get('current_title', 'N/A')}*" for c in top_3]
