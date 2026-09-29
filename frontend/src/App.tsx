@@ -711,15 +711,22 @@ function GlowButton({
   children,
   onClick,
   secondary = false,
+  disabled = false,
+  title,
 }: {
   children: React.ReactNode;
   onClick?: () => void;
   secondary?: boolean;
+  disabled?: boolean;
+  title?: string;
 }) {
   return (
     <button
       onClick={onClick}
+      disabled={disabled}
+      title={title}
       className={secondary ? "button-secondary" : "button-glow"}
+      style={disabled ? { opacity: 0.45, cursor: "not-allowed", filter: "grayscale(0.4)" } : undefined}
     >
       {children}
       <ArrowRight size={16} />
@@ -2375,7 +2382,11 @@ function Ingest({
                 <Zap size={16} /> Load Demo Dataset
               </button>
             )}
-            <GlowButton onClick={onAnalyze}>
+            <GlowButton
+              onClick={onAnalyze}
+              disabled={files.length === 0 || loading}
+              title={files.length === 0 ? "Load the demo dataset or upload a candidate pool first" : undefined}
+            >
               {loading ? (
                 <>
                   <span className="spinner" /> AI Agents Reasoning...
