@@ -648,7 +648,7 @@ def parse_single_pdf_candidate(pdf_bytes: bytes, filename: str, idx: int) -> dic
     if exp_match:
         try:
             years_exp = float(exp_match.group(1))
-        except:
+        except ValueError:
             years_exp = 0.0
     else:
         years = re.findall(r'\b(19\d\d|20[0-2]\d)\b', raw_text)

@@ -176,7 +176,7 @@ def check_honeypot_reasons(cand):
                     start_year = int(start_date_str.split("-")[0])
                     if start_year < founding_year:
                         reasons.append(f"Worked at {comp} starting in {start_year}, but company was founded in {founding_year}.")
-                except:
+                except (ValueError, AttributeError):
                     pass
             dur_years = job.get("duration_months", 0) / 12.0
             max_dur = CURRENT_REF_DATE.year - founding_year
