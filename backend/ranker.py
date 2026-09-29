@@ -57,6 +57,11 @@ if EMBEDDINGS_FILE.exists() and IDS_FILE.exists():
 # Global SentenceTransformer model reference (loaded only when needed)
 SENTENCE_MODEL = None
 _MODEL_LOAD_LOCK = threading.Lock()
+# Guards model.encode() calls too, not just the load: PyTorch's MPS (Apple GPU) backend
+# isn't safe under concurrent calls from multiple threads on the same model instance —
+# the startup warm-up thread and a request thread hitting encode() at the same time
+# crashes the whole process natively (no Python exception, just a silent process exit).
+_ENCODE_LOCK = threading.Lock()
 
 def _load_model_with_fallback(model_name):
     from sentence_transformers import SentenceTransformer
@@ -120,7 +125,8 @@ def encode_texts(texts, normalize=True):
 
     model = get_sentence_model()
     if model is not None:
-        return model.encode(texts, normalize_embeddings=normalize, show_progress_bar=False)
+        with _ENCODE_LOCK:
+            return model.encode(texts, normalize_embeddings=normalize, show_progress_bar=False)
     raise RuntimeError("No embedding provider or model available.")
 
 def parse_date(date_str):
