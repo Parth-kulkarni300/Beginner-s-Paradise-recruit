@@ -250,7 +250,7 @@ This was our team's first time building an end-to-end AI-powered full-stack prod
 
 ## 📜 Credits & External Resources
 
-- [BAAI/bge-base-en-v1.5](https://huggingface.co/BAAI/bge-base-en-v1.5) — Sentence embedding model (MIT License)
+- [BAAI/bge-base-en-v1.5](https://huggingface.co/BAAI/bge-base-en-v1.5) — Sentence embedding model 
 - [sentence-transformers](https://www.sbert.net/) — Python library for BERT-based embeddings
 - [Google Gemini API](https://ai.google.dev/) — LLM reasoning for recruiter summaries
 - [FastAPI](https://fastapi.tiangolo.com/) — Modern Python web framework
