@@ -818,9 +818,12 @@ async def upload_candidates_batch(
 def load_demo_dataset():
     """
     Resets the candidate database back to the bundled demo dataset (sample_candidates.jsonl).
-    Re-calculates embeddings for the demo dataset safely.
+    Skips re-computing embeddings if the pre-built .npy file already covers all demo candidates,
+    and background-threads the computation otherwise so the HTTP response is always fast.
     """
+    import threading
     import backend.agent as agent_mod
+    import backend.ranker as ranker_mod
     possible_paths = [
         Path(__file__).parent / "sample_candidates.jsonl",
         Path(__file__).parent / "candidates.jsonl",
@@ -847,10 +850,35 @@ def load_demo_dataset():
 
         agent_mod.ACTIVE_SHORTLIST.clear()
 
-        try:
-            compute_and_persist_embeddings(agent_mod.CANDIDATES)
-        except Exception as emb_err:
-            logger.warning(f"Demo embedding auto-compute warning: {emb_err}")
+        # Fast path: if pre-computed embeddings already cover all active candidates,
+        # just reload them from disk rather than re-running the model.
+        _emb_file = Path(__file__).parent / "candidate_embeddings.npy"
+        _ids_file = Path(__file__).parent / "candidate_ids.json"
+        needs_recompute = True
+        if _emb_file.exists() and _ids_file.exists():
+            try:
+                _existing = np.load(str(_emb_file))
+                if _existing.shape[0] == len(agent_mod.CANDIDATES):
+                    # Embeddings match — reload from disk instantly (no model run needed)
+                    with open(str(_ids_file)) as _f:
+                        _ids = json.load(_f)
+                    ranker_mod.CANDIDATE_EMBEDDINGS = _existing
+                    ranker_mod.CANDIDATE_ID_TO_INDEX = {cid: idx for idx, cid in enumerate(_ids)}
+                    ranker_mod.EMBEDDINGS_LOADED = True
+                    ranker_mod.EMBEDDINGS_COUNT = len(_ids)
+                    needs_recompute = False
+                    logger.info("Demo load: reused pre-built embeddings (skipped model run).")
+            except Exception as _e:
+                logger.warning(f"Demo load: could not reuse embeddings ({_e}), will recompute.")
+
+        if needs_recompute:
+            # Background thread — response returns immediately; embeddings arrive shortly after
+            threading.Thread(
+                target=compute_and_persist_embeddings,
+                args=(agent_mod.CANDIDATES,),
+                daemon=True,
+            ).start()
+            logger.info("Demo load: embedding recompute dispatched to background thread.")
 
         return {
             "status": "success",
