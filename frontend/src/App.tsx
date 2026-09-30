@@ -650,7 +650,7 @@ export default function RecruitShieldApp() {
   const [screen, setScreen] = useState<"landing" | "ingest" | "pipeline" | "deepdive">("landing");
   const [selected, setSelected] = useState<Candidate>(candidates[0]);
   const [query, setQuery] = useState("");
-  const [threshold, setThreshold] = useState(55);
+  const [threshold, setThreshold] = useState(0);
   const [locations, setLocations] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [files, setFiles] = useState<string[]>([]);
@@ -663,7 +663,7 @@ export default function RecruitShieldApp() {
   const [workModes, setWorkModes] = useState<string[]>([]);
   const [eduLevels, setEduLevels] = useState<string[]>([]);
   const [openToRelocation, setOpenToRelocation] = useState(false);
-  const [activeTab, setActiveTab] = useState<'eligible' | 'unaligned' | 'all' | 'shortlisted'>('eligible');
+  const [activeTab, setActiveTab] = useState<'eligible' | 'unaligned' | 'all' | 'shortlisted'>('all');
   const [isHowItWorksOpen, setIsHowItWorksOpen] = useState(false);
   const [isDemoLoading, setIsDemoLoading] = useState(false);
   const [demoProgress, setDemoProgress] = useState(0);
@@ -1242,6 +1242,8 @@ export default function RecruitShieldApp() {
           setFiles((prev) => [...prev, ...result.filesAdded!]);
         }
         fetchShortlist(1);
+        setActiveTab('all');
+        setThreshold(0);
         showToast(`${title} loaded successfully (${count} candidates)`, "success");
         setScreen((s) => (s === "landing" ? "ingest" : s));
       } else {
@@ -1399,7 +1401,7 @@ export default function RecruitShieldApp() {
       </>
     );
   const resetAllFilters = () => {
-    setThreshold(55);
+    setThreshold(0);
     setExpBuckets([]);
     setLocations([]);
     setWorkModes([]);
