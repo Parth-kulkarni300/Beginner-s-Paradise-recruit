@@ -650,7 +650,7 @@ export default function RecruitShieldApp() {
   const [screen, setScreen] = useState<"landing" | "ingest" | "pipeline" | "deepdive">("landing");
   const [selected, setSelected] = useState<Candidate>(candidates[0]);
   const [query, setQuery] = useState("");
-  const [threshold, setThreshold] = useState(0);
+  const [threshold, setThreshold] = useState(55);
   const [locations, setLocations] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [files, setFiles] = useState<string[]>([]);
@@ -746,8 +746,8 @@ export default function RecruitShieldApp() {
   const filtered = useMemo(
     () =>
       categoryFiltered.filter((c) => {
-        // Match score (only filter by min threshold for non-unaligned tabs)
-        if (activeTab !== 'unaligned' && c.score < threshold) return false;
+        // Match score — only apply threshold when viewing 'eligible' tab; 'all' always shows everyone
+        if (activeTab === 'eligible' && c.score < threshold) return false;
         // Experience bucket
         if (!expBucketMatch(c.experience)) return false;
         // Location
@@ -1243,7 +1243,7 @@ export default function RecruitShieldApp() {
         }
         fetchShortlist(1);
         setActiveTab('all');
-        setThreshold(0);
+        // Keep threshold at 55 so it looks dynamic (eligible tab shows filtered view)
         showToast(`${title} loaded successfully (${count} candidates)`, "success");
         setScreen((s) => (s === "landing" ? "ingest" : s));
       } else {
@@ -1401,7 +1401,7 @@ export default function RecruitShieldApp() {
       </>
     );
   const resetAllFilters = () => {
-    setThreshold(0);
+    setThreshold(55);
     setExpBuckets([]);
     setLocations([]);
     setWorkModes([]);
