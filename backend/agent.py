@@ -167,7 +167,7 @@ def apply_consulting_filter() -> str:
 
 def rank_and_reason_candidates(job_description: str, top_n: int = 50) -> str:
     """
-    Uses BGE-small-v1.5 embeddings and title matching to rank the remaining candidate pool.
+    Uses BAAI/bge-base-en-v1.5 embeddings and title matching to rank the remaining candidate pool.
     Generates non-hallucinatory recruiter explanations for the top shortlist.
     Args:
         job_description: The job description text to match against.

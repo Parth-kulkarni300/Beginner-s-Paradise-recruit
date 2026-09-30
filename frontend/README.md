@@ -1,32 +1,39 @@
-# React + TypeScript + Vite
+# RecruitShield AI — Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+> 🏆 Built for First Commit Hackathon 2026 — Team Beginner's Paradise
 
-Currently, two official plugins are available:
+React 19 + TypeScript + Vite dashboard for the RecruitShield AI autonomous candidate screening platform.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## 🚀 Live Demo
+[beginner-s-paradise-recruitshield.vercel.app](https://beginner-s-paradise-recruitshield.vercel.app)
 
-## React Compiler
+## 🛠️ Tech Stack
+- **React 19** + **TypeScript** — Component-based UI
+- **Vite 8** — Lightning-fast dev server and bundler
+- **Vanilla CSS** — Custom glassmorphism dark-mode design system
+- **Lucide React** — Icon library
+- **Framer Motion** — Animations
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## 📦 Setup
 
-## Expanding the Oxlint configuration
-
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
-
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+```bash
+npm install
+npm run dev
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+Runs on `http://localhost:5173`
+
+The frontend connects to the FastAPI backend. Set `VITE_API_URL` in a `.env` file to point to your backend:
+
+```
+VITE_API_URL=http://localhost:8000
+```
+
+## 🏗️ Key Files
+- `src/App.tsx` — Full recruiter dashboard (~5000 lines): candidate pipeline, AI chatbot, agent telemetry console, Excel export
+- `src/index.css` — Complete design system with CSS tokens, glassmorphism, animations
+- `index.html` — Entry point with Google Fonts
+
+## 📖 Full Documentation
+See the root [README.md](../README.md) for full system architecture, backend setup, and API documentation.
+
